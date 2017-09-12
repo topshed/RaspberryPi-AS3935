@@ -3,9 +3,12 @@ from RPi_AS3935 import RPi_AS3935
 
 import RPi.GPIO as GPIO
 import time
+import logzero
+from logzero import logger
 from datetime import datetime
 
 GPIO.setmode(GPIO.BCM)
+logzero.logfile('/home/pi/lightning.log')
 
 # Rev. 1 Raspberry Pis should leave bus set at 0, while rev. 2 Pis should set
 # bus equal to 1. The address should be changed to match the address of the
@@ -22,24 +25,24 @@ def handle_interrupt(channel):
     global sensor
     reason = sensor.get_interrupt()
     if reason == 0x01:
-        print("Noise level too high - adjusting")
+        logger.info("Noise level too high - adjusting")
         sensor.raise_noise_floor()
     elif reason == 0x04:
-        print("Disturber detected - masking")
+        logger.info("Disturber detected - masking")
         sensor.set_mask_disturber(True)
     elif reason == 0x08:
         now = datetime.now().strftime('%H:%M:%S - %Y/%m/%d')
         distance = sensor.get_distance()
-        print("We sensed lightning!")
-        print("It was " + str(distance) + "km away. (%s)" % now)
-        print("")
+        logger.info("We sensed lightning!")
+        logger.info("It was " + str(distance) + "km away. (%s)" % now)
+        logger.info("")
 
 pin = 17
 
 GPIO.setup(pin, GPIO.IN)
 GPIO.add_event_detect(pin, GPIO.RISING, callback=handle_interrupt)
 
-print("Waiting for lightning - or at least something that looks like it")
+logger.info("Waiting for lightning - or at least something that looks like it")
 
 while True:
     time.sleep(1.0)
