@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-
 from RPi_AS3935 import RPi_AS3935
-
+from ISStreamer.Streamer import Streamer
 import RPi.GPIO as GPIO
 import time
 import logzero
@@ -10,6 +9,15 @@ from datetime import datetime
 
 GPIO.setmode(GPIO.BCM)
 logzero.logfile('/home/pi/lightning.log')
+credentials_file = "/home/pi/weather-station/credentials.initialstate"
+f = open(credentials_file, "r")
+credentials = json.load(f)
+
+CITY = ""
+BUCKET_NAME = ":partly_sunny:  Weather Station"
+BUCKET_KEY = credentials['X-IS-BucketKey']
+ACCESS_KEY = credentials['X-IS-AccessKey']
+SENSOR_LOCATION_NAME = ""
 
 # Rev. 1 Raspberry Pis should leave bus set at 0, while rev. 2 Pis should set
 # bus equal to 1. The address should be changed to match the address of the
@@ -37,6 +45,9 @@ def handle_interrupt(channel):
         logger.info("We sensed lightning!")
         logger.info("It was " + str(distance) + "km away. (%s)" % now)
         logger.info("")
+        streamer = Streamer(bucket_name=BUCKET_NAME, bucket_key=BUCKET_KEY, access_key=ACCESS_KEY)
+        streamer.log(":zap: Strike (km away)", "str(distance)")
+        streamer.flush()
 
 pin = 17
 
